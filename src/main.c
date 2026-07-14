@@ -5,9 +5,11 @@
 #define K_SCREEN_WIDTH 640
 #define K_SCREEN_HEIGHT 480
 
+void cleanup(SDL_Window** window, SDL_Surface** surface);
 
-int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) == false) 
+int main(int argc, char* argv[])
+{
+    if (SDL_Init(SDL_INIT_VIDEO) == false)
     {
         SDL_Log("SDL could not initialize! SDL error: %s\n", SDL_GetError());
         return 1;
@@ -15,24 +17,21 @@ int main(int argc, char* argv[]) {
 
     SDL_Window* pWindow = NULL;
     SDL_Surface* pScreenSurface = NULL;
-    
+
     pWindow = SDL_CreateWindow(GAME_NAME, K_SCREEN_WIDTH, K_SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
-    if (pWindow == NULL) 
+    if (pWindow == NULL)
     {
         SDL_Log("Could not create window: %s\n", SDL_GetError());
         return 1;
     }
 
     pScreenSurface = SDL_GetWindowSurface(pWindow);
-    if (pScreenSurface == NULL) 
+    if (pScreenSurface == NULL)
     {
         SDL_Log("Could not get window surface: %s\n", SDL_GetError());
-        SDL_DestroyWindow(pWindow);
-        pWindow = NULL;
-        SDL_Quit();
+        cleanup(pWindow, pScreenSurface);
         return 1;
     }
-
 
     bool quit = false;
     SDL_Event event;
@@ -56,10 +55,23 @@ int main(int argc, char* argv[]) {
         SDL_FillSurfaceRect(pScreenSurface, NULL, SDL_MapSurfaceRGB(pScreenSurface, 0xFF, 0xFF, 0xFF));
         SDL_UpdateWindowSurface(pWindow);
     }
-    
-    SDL_DestroyWindow(pWindow);
-    pWindow = NULL;
-    pScreenSurface = NULL;
-    SDL_Quit();
+
+    cleanup(pWindow, pScreenSurface);
     return 0;
+}
+
+void cleanup(SDL_Window** window, SDL_Surface** surface)
+{
+    if (window != NULL && *window != NULL)
+    {
+        SDL_DestroyWindow(*window);
+        *window = NULL;
+    }
+
+    if (surface != NULL)
+    {
+        *surface = NULL;
+    }
+
+    SDL_Quit();
 }
