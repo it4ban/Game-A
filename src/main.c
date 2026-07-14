@@ -5,7 +5,7 @@
 #define K_SCREEN_WIDTH 640
 #define K_SCREEN_HEIGHT 480
 
-void cleanup(SDL_Window** window, SDL_Surface** surface);
+static void cleanup(SDL_Window** window, SDL_Surface** surface);
 
 int main(int argc, char* argv[])
 {
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     if (pScreenSurface == NULL)
     {
         SDL_Log("Could not get window surface: %s\n", SDL_GetError());
-        cleanup(pWindow, pScreenSurface);
+        cleanup(&pWindow, &pScreenSurface);
         return 1;
     }
 
@@ -56,11 +56,11 @@ int main(int argc, char* argv[])
         SDL_UpdateWindowSurface(pWindow);
     }
 
-    cleanup(pWindow, pScreenSurface);
+    cleanup(&pWindow, &pScreenSurface);
     return 0;
 }
 
-void cleanup(SDL_Window** window, SDL_Surface** surface)
+static void cleanup(SDL_Window** window, SDL_Surface** surface)
 {
     if (window != NULL && *window != NULL)
     {
