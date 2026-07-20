@@ -1,11 +1,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
-#define GAME_NAME "GameA"
-#define K_SCREEN_WIDTH 640
-#define K_SCREEN_HEIGHT 480
-
-static void cleanup(SDL_Window** window, SDL_Surface** surface);
+#include "main.h"
 
 int main(int argc, char* argv[])
 {
@@ -18,18 +14,9 @@ int main(int argc, char* argv[])
     SDL_Window* pWindow = NULL;
     SDL_Surface* pScreenSurface = NULL;
 
-    pWindow = SDL_CreateWindow(GAME_NAME, K_SCREEN_WIDTH, K_SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
-    if (pWindow == NULL)
+    if (createMainGameWindow(&pWindow, &pScreenSurface) == false)
     {
-        SDL_Log("Could not create window: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    pScreenSurface = SDL_GetWindowSurface(pWindow);
-    if (pScreenSurface == NULL)
-    {
-        SDL_Log("Could not get window surface: %s\n", SDL_GetError());
-        cleanup(&pWindow, &pScreenSurface);
+        SDL_Quit();
         return 1;
     }
 
@@ -58,6 +45,32 @@ int main(int argc, char* argv[])
 
     cleanup(&pWindow, &pScreenSurface);
     return 0;
+}
+
+bool createMainGameWindow(SDL_Window** window, SDL_Surface** surface)
+{
+    if (window == NULL || surface == NULL)
+    {
+        SDL_Log("Invalid output pointers");
+        return false;
+    }
+
+    *window = SDL_CreateWindow(GAME_NAME, K_SCREEN_WIDTH, K_SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+    if (*window == NULL)
+    {
+        SDL_Log("Could not create window: %s\n", SDL_GetError());
+        return false;
+    }
+
+    *surface = SDL_GetWindowSurface(*window);
+    if (*surface == NULL)
+    {
+        SDL_Log("Could not get window surface: %s\n", SDL_GetError());
+        cleanup(window, surface);
+        return false;
+    }
+
+    return true;
 }
 
 static void cleanup(SDL_Window** window, SDL_Surface** surface)

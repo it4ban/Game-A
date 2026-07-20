@@ -12,8 +12,19 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 project(GameA VERSION 0.1.0 LANGUAGES C CXX)
 
-add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE src/main.c)
+add_executable(${PROJECT_NAME} WIN32)
+target_sources(${PROJECT_NAME} 
+    PRIVATE 
+        src/main.c 
+    
+    PRIVATE
+        FILE_SET game_headers
+        TYPE HEADERS
+        BASE_DIRS
+           include
+        FILES
+            include/main.h 
+)
 
 add_subdirectory(external)
 target_link_libraries(${PROJECT_NAME} PRIVATE external)
