@@ -15,7 +15,8 @@ project(GameA VERSION 0.1.0 LANGUAGES C CXX)
 add_executable(${PROJECT_NAME} WIN32)
 target_sources(${PROJECT_NAME} 
     PRIVATE 
-        src/main.c 
+        src/main.c
+        src/platform/single_instance_windows.c 
     
     PRIVATE
         FILE_SET game_headers
@@ -24,6 +25,7 @@ target_sources(${PROJECT_NAME}
            include
         FILES
             include/main.h 
+            include/single_instance.h
 )
 
 add_subdirectory(external)
