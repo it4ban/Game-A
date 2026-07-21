@@ -2,6 +2,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "main.h"
+#include "single_instance.h"
 
 int main(int argc, char* argv[])
 {

@@ -16,8 +16,6 @@ add_executable(${PROJECT_NAME} WIN32)
 target_sources(${PROJECT_NAME} 
     PRIVATE 
         src/main.c
-        src/platform/single_instance_windows.c 
-    
     PRIVATE
         FILE_SET game_headers
         TYPE HEADERS
@@ -27,6 +25,10 @@ target_sources(${PROJECT_NAME}
             include/main.h 
             include/single_instance.h
 )
+
+if(WIN32)
+    target_sources(${PROJECT_NAME} PRIVATE src/platform/single_instance_windows.c)
+endif()
 
 add_subdirectory(external)
 target_link_libraries(${PROJECT_NAME} PRIVATE external)
