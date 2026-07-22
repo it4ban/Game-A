@@ -5,7 +5,7 @@ static HANDLE instanceMutex = NULL;
 
 SingleInstanceResult singleInstanceAcquire(void)
 {
-    instanceMutex = CreateMutexW(NULL, FALSE, L"MY_GAME_MUTEX");
+    instanceMutex = CreateMutexW(NULL, FALSE, GAME_INSTANCE_ID_W);
     if (instanceMutex == NULL)
     {
         return SINGLE_INSTANCE_ERROR;

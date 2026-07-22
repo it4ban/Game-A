@@ -6,13 +6,13 @@
 
 int main(int argc, char* argv[])
 {
-    SingleInstanceResult mutexStatus = singleInstanceAcquire();
-    if (mutexStatus == SINGLE_INSTANCE_ALREADY_RUNNING)
+    SingleInstanceResult programStatus = singleInstanceAcquire();
+    if (programStatus == SINGLE_INSTANCE_ALREADY_RUNNING)
     {
         return 0;
     }
 
-    if (mutexStatus == SINGLE_INSTANCE_ERROR)
+    if (programStatus == SINGLE_INSTANCE_ERROR)
     {
         return 1;
     }

@@ -28,6 +28,8 @@ target_sources(${PROJECT_NAME}
 
 if(WIN32)
     target_sources(${PROJECT_NAME} PRIVATE src/platform/single_instance_windows.c)
+elseif(APPLE OR LINUX)
+    target_sources(${PROJECT_NAME} PRIVATE src/platform/single_instance_posix.c)
 endif()
 
 add_subdirectory(external)
