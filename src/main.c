@@ -6,9 +6,21 @@
 
 int main(int argc, char* argv[])
 {
+    SingleInstanceResult mutexStatus = singleInstanceAcquire();
+    if (mutexStatus == SINGLE_INSTANCE_ALREADY_RUNNING)
+    {
+        return 0;
+    }
+
+    if (mutexStatus == SINGLE_INSTANCE_ERROR)
+    {
+        return 1;
+    }
+
     if (SDL_Init(SDL_INIT_VIDEO) == false)
     {
         SDL_Log("SDL could not initialize! SDL error: %s\n", SDL_GetError());
+        singleInstanceRelease();
         return 1;
     }
 
@@ -86,6 +98,8 @@ static void cleanup(SDL_Window** window, SDL_Surface** surface)
     {
         *surface = NULL;
     }
+
+    singleInstanceRelease();
 
     SDL_Quit();
 }

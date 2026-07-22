@@ -1,9 +1,31 @@
 #include "single_instance.h"
 #include <Windows.h>
 
+static HANDLE instanceMutex = NULL;
+
 SingleInstanceResult singleInstanceAcquire(void)
 {
-    SingleInstanceResult result;
+    instanceMutex = CreateMutexW(NULL, FALSE, L"MY_GAME_MUTEX");
+    if (instanceMutex == NULL)
+    {
+        return SINGLE_INSTANCE_ERROR;
+    }
 
-    HANDLE handle = CreateMutexW(NULL, TRUE, L"MY_GAME_MUTEX");
+    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        singleInstanceRelease();
+
+        return SINGLE_INSTANCE_ALREADY_RUNNING;
+    }
+
+    return SINGLE_INSTANCE_ACQUIRED;
+}
+
+void singleInstanceRelease(void)
+{
+    if (instanceMutex != NULL)
+    {
+        CloseHandle(instanceMutex);
+        instanceMutex = NULL;
+    }
 }
