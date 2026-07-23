@@ -1,5 +1,5 @@
 build
 .code
 .idea
-.agents
+.agentbs
 *.log
