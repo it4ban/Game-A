@@ -12,7 +12,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 project(GameA VERSION 0.1.0 LANGUAGES C CXX)
 
-add_executable(${PROJECT_NAME} WIN32)
+add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} 
     PRIVATE 
         src/main.c
@@ -27,9 +27,25 @@ target_sources(${PROJECT_NAME}
 )
 
 if(WIN32)
-    target_sources(${PROJECT_NAME} PRIVATE src/platform/single_instance_windows.c)
-elseif(APPLE OR LINUX)
-    target_sources(${PROJECT_NAME} PRIVATE src/platform/single_instance_posix.c)
+    target_sources(${PROJECT_NAME} PRIVATE
+        src/platform/single_instance_windows.c
+    )
+    
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WIN32_EXECUTABLE "$<NOT:$<CONFIG:Debug>>"
+    )
+elseif(APPLE)
+    target_sources(${PROJECT_NAME} PRIVATE
+        src/platform/single_instance_posix.c
+    )
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+elseif(LINUX)
+    target_sources(${PROJECT_NAME} PRIVATE
+        src/platform/single_instance_posix.c
+    )
 endif()
 
 add_subdirectory(external)
