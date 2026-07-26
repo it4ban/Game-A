@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/stat.h>
 #include <stdbool.h>
 
 static int fileHandle = -1;
