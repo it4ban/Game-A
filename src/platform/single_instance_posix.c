@@ -11,70 +11,26 @@
 
 static int fileHandle = -1;
 
+static bool endsWithSlash(const char* dirPath);
+
+static char* createLockPath(void);
+
+static char* buildLockPath(const char* runtimeDir);
+
+static SingleInstanceResult tryLockFile(int descriptor);
+
 SingleInstanceResult singleInstanceAcquire(void)
 {
-#ifdef __APPLE__
-    size_t runtimeDirSize = confstr(_CS_DARWIN_USER_TEMP_DIR, NULL, 0);
-    if (runtimeDirSize == 0)
+    if (fileHandle != -1)
     {
         return SINGLE_INSTANCE_ERROR;
     }
 
-    char* runtimeDir = malloc(runtimeDirSize);
-    if (runtimeDir == NULL)
-    {
-        return SINGLE_INSTANCE_ERROR;
-    }
-
-    size_t runtimeWritten = confstr(_CS_DARWIN_USER_TEMP_DIR, runtimeDir, runtimeDirSize);
-    if (runtimeWritten == 0 || runtimeWritten > runtimeDirSize || runtimeDir[0] == '\0')
-    {
-        free(runtimeDir);
-        return SINGLE_INSTANCE_ERROR;
-    }
-
-    size_t dirLength = strlen(runtimeDir);
-    size_t fileLength = strlen(GAME_INSTANCE_ID);
-
-    bool hasSlash = dirLength > 0 && runtimeDir[dirLength - 1] == '/';
-    size_t lockPathSize = dirLength + (hasSlash ? 0 : 1) + fileLength + strlen(".lock") + 1;
-
-    char* lockPath = malloc(lockPathSize);
+    char* lockPath = createLockPath();
     if (lockPath == NULL)
     {
-        free(runtimeDir);
         return SINGLE_INSTANCE_ERROR;
     }
-
-    int lockWritten =
-        snprintf(lockPath, lockPathSize, hasSlash ? "%s%s.lock" : "%s/%s.lock", runtimeDir, GAME_INSTANCE_ID);
-    if (lockWritten < 0 || (size_t)lockWritten >= lockPathSize)
-    {
-        free(lockPath);
-        free(runtimeDir);
-        return SINGLE_INSTANCE_ERROR;
-    }
-
-    free(runtimeDir);
-    runtimeDir = NULL;
-#else
-    const char* runtimeDir = getenv("XDG_RUNTIME_DIR");
-    if (runtimeDir != NULL && runtimeDir[0] != '\0')
-    {
-        size_t bufSize = strlen(runtimeDir) + strlen(GAME_INSTANCE_ID) + 2;
-        char lockPath[bufSize];
-
-        int statusConcat = snprintf(lockPath, bufSize, "%s/%s", runtimeDir, GAME_INSTANCE_ID);
-        if (statusConcat < 0 || (size_t)statusConcat >= bufSize)
-        {
-            return SINGLE_INSTANCE_ERROR;
-        }
-    }
-    else
-    {
-        return SINGLE_INSTANCE_ERROR;
-    }
-#endif
 
     fileHandle = open(lockPath, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
     free(lockPath);
@@ -84,22 +40,98 @@ SingleInstanceResult singleInstanceAcquire(void)
         return SINGLE_INSTANCE_ERROR;
     }
 
+    SingleInstanceResult result = tryLockFile(fileHandle);
+    if (result != SINGLE_INSTANCE_ACQUIRED)
+    {
+        singleInstanceRelease();
+    }
+
+    return result;
+}
+
+static bool endsWithSlash(const char* dirPath)
+{
+    size_t length = strlen(dirPath);
+    return length > 0 && dirPath[length - 1] == '/';
+}
+
+static char* createLockPath(void)
+{
+    char* lockPath = NULL;
+
+#ifdef __APPLE__
+    size_t runtimeDirSize = confstr(_CS_DARWIN_USER_TEMP_DIR, NULL, 0);
+    if (runtimeDirSize == 0)
+    {
+        return NULL;
+    }
+
+    char* runtimeDir = malloc(runtimeDirSize);
+    if (runtimeDir == NULL)
+    {
+        return NULL;
+    }
+
+    size_t runtimeWritten = confstr(_CS_DARWIN_USER_TEMP_DIR, runtimeDir, runtimeDirSize);
+    if (runtimeWritten == 0 || runtimeWritten > runtimeDirSize || runtimeDir[0] == '\0')
+    {
+        free(runtimeDir);
+        return NULL;
+    }
+
+    lockPath = buildLockPath(runtimeDir);
+    free(runtimeDir);
+#else
+    const char* runtimeDir = getenv("XDG_RUNTIME_DIR");
+    lockPath = buildLockPath(runtimeDir);
+#endif
+
+    return lockPath;
+}
+
+static char* buildLockPath(const char* runtimeDir)
+{
+    if (runtimeDir == NULL || runtimeDir[0] == '\0')
+    {
+        return NULL;
+    }
+
+    bool runtimeDirHasSlash = endsWithSlash(runtimeDir);
+
+    size_t lockPathSize =
+        strlen(runtimeDir) + (runtimeDirHasSlash ? 0 : 1) + strlen(GAME_INSTANCE_ID) + strlen(".lock") + 1;
+
+    char* lockPath = malloc(lockPathSize);
+    if (lockPath == NULL)
+    {
+        return NULL;
+    }
+
+    int lockWritten =
+        snprintf(lockPath, lockPathSize, runtimeDirHasSlash ? "%s%s.lock" : "%s/%s.lock", runtimeDir, GAME_INSTANCE_ID);
+    if (lockWritten < 0 || (size_t)lockWritten >= lockPathSize)
+    {
+        free(lockPath);
+        return NULL;
+    }
+
+    return lockPath;
+}
+
+static SingleInstanceResult tryLockFile(int descriptor)
+{
     struct flock lock = {0};
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = 0;
     lock.l_len = 0;
 
-    if (fcntl(fileHandle, F_SETLK, &lock) == -1)
+    if (fcntl(descriptor, F_SETLK, &lock) == -1)
     {
         if (errno == EACCES || errno == EAGAIN)
         {
-            singleInstanceRelease();
-
             return SINGLE_INSTANCE_ALREADY_RUNNING;
         }
-
-        singleInstanceRelease();
 
         return SINGLE_INSTANCE_ERROR;
     }
