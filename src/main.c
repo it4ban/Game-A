@@ -4,6 +4,8 @@
 #include "main.h"
 #include "single_instance.h"
 
+static void cleanup(SDL_Window** window, SDL_Surface** surface);
+
 int main(int argc, char* argv[])
 {
     SingleInstanceResult programStatus = singleInstanceAcquire();
@@ -33,11 +35,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    bool quit = false;
+    gameIsRunning = true;
     SDL_Event event;
     SDL_zero(event);
 
-    while (quit == false)
+    while (gameIsRunning == true)
     {
         while (SDL_PollEvent(&event) == true)
         {
@@ -47,13 +49,17 @@ int main(int argc, char* argv[])
                 pScreenSurface = SDL_GetWindowSurface(pWindow);
                 break;
             case SDL_EVENT_QUIT:
-                quit = true;
+                gameIsRunning = false;
                 break;
             }
         }
 
         SDL_FillSurfaceRect(pScreenSurface, NULL, SDL_MapSurfaceRGB(pScreenSurface, 0xFF, 0xFF, 0xFF));
         SDL_UpdateWindowSurface(pWindow);
+
+        processPlayerInput();
+
+        SDL_Delay(16);
     }
 
     cleanup(&pWindow, &pScreenSurface);
@@ -84,6 +90,10 @@ bool createMainGameWindow(SDL_Window** window, SDL_Surface** surface)
     }
 
     return true;
+}
+
+void processPlayerInput()
+{
 }
 
 static void cleanup(SDL_Window** window, SDL_Surface** surface)
