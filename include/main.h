@@ -6,6 +6,14 @@
 
 bool gameIsRunning = false;
 
-bool createMainGameWindow(SDL_Window** window, SDL_Surface** surface);
+typedef struct Game
+{
+    SDL_Window* pWindow;
+    SDL_Surface* pSurface;
+} Game;
 
-void processPlayerInput(void);
+bool createMainGameWindow(Game* game);
+
+bool processPlayerInput(Game* game);
+
+bool renderFrameGraphics(Game* game);

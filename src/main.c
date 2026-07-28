@@ -4,7 +4,7 @@
 #include "main.h"
 #include "single_instance.h"
 
-static void cleanup(SDL_Window** window, SDL_Surface** surface);
+static void cleanup(Game* game);
 
 int main(int argc, char* argv[])
 {
@@ -26,87 +26,108 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    SDL_Window* pWindow = NULL;
-    SDL_Surface* pScreenSurface = NULL;
+    Game game = {.pWindow = NULL, .pSurface = NULL};
 
-    if (createMainGameWindow(&pWindow, &pScreenSurface) == false)
+    if (createMainGameWindow(&game) == false)
     {
-        SDL_Quit();
+        cleanup(&game);
         return 1;
     }
 
     gameIsRunning = true;
-    SDL_Event event;
-    SDL_zero(event);
 
-    while (gameIsRunning == true)
+    while (gameIsRunning)
     {
-        while (SDL_PollEvent(&event) == true)
+        gameIsRunning = processPlayerInput(&game);
+        if (!gameIsRunning)
         {
-            switch (event.type)
-            {
-            case SDL_EVENT_WINDOW_RESIZED:
-                pScreenSurface = SDL_GetWindowSurface(pWindow);
-                break;
-            case SDL_EVENT_QUIT:
-                gameIsRunning = false;
-                break;
-            }
+            break;
         }
 
-        SDL_FillSurfaceRect(pScreenSurface, NULL, SDL_MapSurfaceRGB(pScreenSurface, 0xFF, 0xFF, 0xFF));
-        SDL_UpdateWindowSurface(pWindow);
-
-        processPlayerInput();
+        SDL_FillSurfaceRect(game.pSurface, NULL, SDL_MapSurfaceRGB(game.pSurface, 0xFF, 0xFF, 0xFF));
+        SDL_UpdateWindowSurface(game.pWindow);
 
         SDL_Delay(16);
     }
 
-    cleanup(&pWindow, &pScreenSurface);
+    cleanup(&game);
     return 0;
 }
 
-bool createMainGameWindow(SDL_Window** window, SDL_Surface** surface)
+bool createMainGameWindow(Game* game)
 {
-    if (window == NULL || surface == NULL)
+    if (game == NULL)
     {
         SDL_Log("Invalid output pointers");
         return false;
     }
 
-    *window = SDL_CreateWindow(GAME_NAME, K_SCREEN_WIDTH, K_SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
-    if (*window == NULL)
+    game->pWindow = SDL_CreateWindow(GAME_NAME, K_SCREEN_WIDTH, K_SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
+    if (game->pWindow == NULL)
     {
         SDL_Log("Could not create window: %s\n", SDL_GetError());
         return false;
     }
 
-    *surface = SDL_GetWindowSurface(*window);
-    if (*surface == NULL)
+    game->pSurface = SDL_GetWindowSurface(game->pWindow);
+    if (game->pSurface == NULL)
     {
         SDL_Log("Could not get window surface: %s\n", SDL_GetError());
-        cleanup(window, surface);
+        cleanup(game);
         return false;
     }
 
     return true;
 }
 
-void processPlayerInput()
+bool processPlayerInput(Game* game)
 {
-}
+    SDL_Event event;
+    SDL_zero(event);
 
-static void cleanup(SDL_Window** window, SDL_Surface** surface)
-{
-    if (window != NULL && *window != NULL)
+    while (SDL_PollEvent(&event) == true)
     {
-        SDL_DestroyWindow(*window);
-        *window = NULL;
+        switch (event.type)
+        {
+        case SDL_EVENT_WINDOW_RESIZED:
+            game->pSurface = SDL_GetWindowSurface(game->pWindow);
+            if (game->pSurface == NULL)
+            {
+                SDL_Log("Could not update window surface: %s", SDL_GetError());
+
+                return false;
+            }
+
+            break;
+        case SDL_EVENT_QUIT:
+            return false;
+        case SDL_EVENT_KEY_DOWN:
+            if (event.key.repeat)
+                break;
+
+            switch (event.key.scancode)
+            {
+            case SDL_SCANCODE_ESCAPE:
+                return false;
+                break;
+            default:
+                break;
+            }
+        }
     }
 
-    if (surface != NULL)
+    return true;
+}
+
+bool renderFrameGraphics(Game* game);
+
+static void cleanup(Game* game)
+{
+    if (game != NULL && game->pWindow != NULL)
     {
-        *surface = NULL;
+        SDL_DestroyWindow(game->pWindow);
+        game->pWindow = NULL;
+        game->pSurface = NULL;
     }
 
     singleInstanceRelease();
